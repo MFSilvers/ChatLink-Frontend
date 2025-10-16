@@ -148,12 +148,8 @@
           <div v-for="msg in messages" :key="msg.id" :class="['flex animate-fade-in', msg.sender_id === user.id ? 'justify-end' : 'justify-start']">
             <div :class="['message-bubble', msg.sender_id === user.id ? 'message-sent' : 'message-received', msg.is_temp ? 'message-temp' : '']">
               <div class="text-sm">{{ msg.message }}</div>
-              <div :class="['text-xs mt-1 flex items-center justify-between', msg.sender_id === user.id ? 'text-blue-100' : 'text-gray-500']">
+              <div :class="['text-xs mt-1', msg.sender_id === user.id ? 'text-blue-100' : 'text-gray-500']">
                 <span>{{ formatTime(msg.created_at) }}</span>
-                <div v-if="msg.sender_id === user.id" class="flex items-center ml-2">
-                  <span v-if="msg.is_read" class="text-blue-200 text-xs font-bold" title="Letto">✓✓</span>
-                  <span v-else class="text-blue-300 text-xs animate-pulse" title="Inviato">✓</span>
-                </div>
               </div>
             </div>
           </div>
