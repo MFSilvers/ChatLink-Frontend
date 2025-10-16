@@ -167,7 +167,7 @@
           </div>
         </div>
         
-        <div class="p-4 bg-white border-t border-gray-200 message-input-area">
+        <div class="p-4 bg-white border-t border-gray-200 message-input-area" :class="{ 'hidden': !selectedContact }">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
             <input 
               v-model="newMessage"

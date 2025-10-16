@@ -403,7 +403,7 @@ html, body, #app {
     padding-bottom: 80px; /* Space for input */
   }
   
-  /* Fix input area */
+  /* Fix input area - only show when chat is selected */
   .message-input-area {
     position: fixed;
     bottom: 0;
@@ -413,6 +413,11 @@ html, body, #app {
     border-top: 1px solid #e5e7eb;
     padding: 1rem;
     z-index: 40;
+  }
+  
+  /* Hide input area when sidebar is visible (no chat selected) */
+  .sidebar:not(.hidden) + .chat-area .message-input-area {
+    display: none !important;
   }
   
   /* Touch-friendly buttons */
