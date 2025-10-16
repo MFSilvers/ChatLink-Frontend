@@ -8,6 +8,12 @@
   box-sizing: border-box;
 }
 
+/* Prevent horizontal scroll globally */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 :root {
   /* Color Palette - Minimalist Professional */
   --primary-50: #f8fafc;
@@ -330,6 +336,19 @@ html, body, #app {
 
 /* Mobile-specific utilities */
 @media (max-width: 768px) {
+  /* Prevent horizontal scroll */
+  body, html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Fix main container */
+  .flex.h-screen {
+    height: 100vh !important;
+    height: 100dvh !important; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+  }
+  
   .mobile-hidden {
     display: none !important;
   }
@@ -349,15 +368,41 @@ html, body, #app {
   /* Mobile chat improvements */
   .chat-area {
     position: relative;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
   
   .sidebar {
     position: absolute;
     top: 0;
     left: 0;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
     z-index: 50;
     box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    overflow-y: auto;
+  }
+  
+  /* Fix message area */
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px; /* Space for input */
+  }
+  
+  /* Fix input area */
+  .message-input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem;
+    z-index: 40;
   }
   
   /* Touch-friendly buttons */

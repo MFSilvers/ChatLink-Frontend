@@ -144,7 +144,7 @@
           </div>
         </div>
         
-        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4 messages-container">
           <div v-for="msg in messages" :key="msg.id" :class="['flex animate-fade-in', msg.sender_id === user.id ? 'justify-end' : 'justify-start']">
             <div :class="['message-bubble', msg.sender_id === user.id ? 'message-sent' : 'message-received', msg.is_temp ? 'message-temp' : '']">
               <div class="text-sm">{{ msg.message }}</div>
@@ -171,7 +171,7 @@
           </div>
         </div>
         
-        <div class="p-4 bg-white border-t border-gray-200">
+        <div class="p-4 bg-white border-t border-gray-200 message-input-area">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
             <input 
               v-model="newMessage"
