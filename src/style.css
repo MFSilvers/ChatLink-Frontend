@@ -128,6 +128,23 @@ html, body, #app {
   border: 1px solid #e5e7eb;
 }
 
+.message-temp {
+  opacity: 0.7;
+  position: relative;
+}
+
+.message-temp::after {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #fbbf24;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
 .status-online {
   width: 0.75rem;
   height: 0.75rem;
@@ -250,13 +267,117 @@ html, body, #app {
 
 
 /* Responsive Design */
-@media (max-width: 768px) {
+/* Mobile First Approach */
+
+/* Extra Small devices (phones, 320px and up) */
+@media (max-width: 480px) {
   .message-bubble {
-    max-width: 18rem;
+    max-width: 14rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
   }
   
   .card {
     border-radius: 0.5rem;
+    margin: 0.5rem;
+  }
+  
+  .card-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .card-body {
+    padding: 0.75rem 1rem;
+  }
+  
+  .avatar {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+  }
+  
+  .btn-primary, .btn-danger {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .input-field {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 481px) and (max-width: 576px) {
+  .message-bubble {
+    max-width: 16rem;
+  }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 577px) and (max-width: 768px) {
+  .message-bubble {
+    max-width: 18rem;
+  }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 769px) {
+  .message-bubble {
+    max-width: 20rem;
+  }
+}
+
+/* Mobile-specific utilities */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-full {
+    width: 100% !important;
+  }
+  
+  .mobile-p-2 {
+    padding: 0.5rem !important;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Mobile chat improvements */
+  .chat-area {
+    position: relative;
+  }
+  
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 50;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+  
+  /* Touch-friendly buttons */
+  .btn-primary, .btn-danger {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better touch targets */
+  input, button, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Improved spacing for mobile */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-2 > * + * {
+    margin-top: 0.5rem;
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4">
-    <div class="card w-full max-w-md animate-fade-in">
+    <div class="card w-full max-w-md animate-fade-in mobile-full">
       <div class="card-header">
         <h2 class="text-2xl font-semibold text-center text-gray-800">
           {{ isRegister ? 'Crea Account' : 'Benvenuto' }}
@@ -107,7 +107,8 @@ export default {
           ? { username: username.value, email: email.value, password: password.value }
           : { username: email.value, password: password.value }
 
-        const response = await fetch(`/api/auth.php`, {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${apiUrl}/api/auth.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, ...body })

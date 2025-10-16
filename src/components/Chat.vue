@@ -1,19 +1,20 @@
 <template>
   <div class="flex h-screen">
-    <div class="w-1/3 sidebar flex flex-col">
+    <!-- Sidebar - Responsive -->
+    <div class="w-full md:w-1/3 lg:w-1/4 sidebar flex flex-col" :class="{ 'hidden': !showSidebar, 'block': showSidebar }">
       <div class="card-header flex justify-between items-center">
         <div class="flex items-center space-x-3">
           <div class="avatar avatar-blue">
             {{ user.username[0].toUpperCase() }}
           </div>
           <div>
-            <h3 class="font-semibold text-lg text-gray-800">{{ user.username }}</h3>
+            <h3 class="font-semibold text-lg text-gray-800 mobile-text-sm">{{ user.username }}</h3>
             <p class="text-xs text-green-600 font-medium">Online</p>
           </div>
         </div>
         <button 
           @click="$emit('logout')" 
-          class="btn-danger text-sm"
+          class="btn-danger text-sm mobile-text-sm"
         >
           Logout
         </button>
@@ -26,11 +27,8 @@
             @input="searchUsers"
             type="text" 
             placeholder="Cerca utenti..."
-            class="input-field pl-10"
+            class="input-field"
           />
-          <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
         </div>
       </div>
       
@@ -104,7 +102,8 @@
       </div>
     </div>
     
-    <div class="flex-1 flex flex-col chat-area">
+    <!-- Chat Area - Responsive -->
+    <div class="flex-1 flex flex-col chat-area" :class="{ 'hidden md:flex': showSidebar }">
       <div v-if="!selectedContact" class="flex-1 flex items-center justify-center">
         <div class="text-center">
           <div class="text-gray-400 mb-4">
@@ -120,11 +119,21 @@
       <template v-else>
         <div class="card-header flex items-center justify-between">
           <div class="flex items-center space-x-3">
+            <!-- Mobile back button -->
+            <button 
+              @click="toggleSidebar" 
+              class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            
             <div class="avatar avatar-orange">
               {{ selectedContact.username[0].toUpperCase() }}
             </div>
             <div>
-              <div class="font-semibold text-lg text-gray-800">{{ selectedContact.username }}</div>
+              <div class="font-semibold text-lg text-gray-800 mobile-text-sm">{{ selectedContact.username }}</div>
               <div class="flex items-center space-x-2">
                 <div :class="!!selectedContact.is_online ? 'status-online' : 'status-offline'"></div>
                 <span class="text-sm" :class="!!selectedContact.is_online ? 'text-green-600' : 'text-gray-500'">
@@ -137,7 +146,7 @@
         
         <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
           <div v-for="msg in messages" :key="msg.id" :class="['flex animate-fade-in', msg.sender_id === user.id ? 'justify-end' : 'justify-start']">
-            <div :class="['message-bubble', msg.sender_id === user.id ? 'message-sent' : 'message-received']">
+            <div :class="['message-bubble', msg.sender_id === user.id ? 'message-sent' : 'message-received', msg.is_temp ? 'message-temp' : '']">
               <div class="text-sm">{{ msg.message }}</div>
               <div :class="['text-xs mt-1 flex items-center justify-between', msg.sender_id === user.id ? 'text-blue-100' : 'text-gray-500']">
                 <span>{{ formatTime(msg.created_at) }}</span>
@@ -188,7 +197,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { io } from 'socket.io-client'
 
 export default {
@@ -202,16 +211,29 @@ export default {
     const newMessage = ref('')
     const searchQuery = ref('')
     const searchResults = ref([])
-    const socket = ref(null)
     const messagesContainer = ref(null)
     const isTyping = ref(false)
-    const statusInterval = ref(null)
-    const conversationsInterval = ref(null)
     let typingTimeout = null
+    
+    // Mobile sidebar state
+    const showSidebar = ref(true)
+    let handleResize = null
+    
+    // WebSocket connection
+    const socket = ref(null)
+
+    // Definisci user come variabile reattiva per il template
+    const user = computed(() => props.user)
+    
+    // Toggle sidebar for mobile
+    const toggleSidebar = () => {
+      showSidebar.value = !showSidebar.value
+    }
 
     const loadConversations = async () => {
       try {
-        const response = await fetch('/api/messages.php?action=conversations', {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${apiUrl}/api/messages.php?action=conversations`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
         const data = await response.json()
@@ -228,7 +250,8 @@ export default {
       }
 
       try {
-        const response = await fetch(`/api/users.php?search=${searchQuery.value}`, {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${apiUrl}/api/users.php?search=${searchQuery.value}`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
         const data = await response.json()
@@ -239,16 +262,28 @@ export default {
     }
 
     const selectContact = async (contact) => {
+      console.log('selectContact called with:', contact)
       selectedContact.value = contact
       searchQuery.value = ''
       searchResults.value = []
       
+      // Hide sidebar on mobile when contact is selected
+      if (window.innerWidth < 768) {
+        showSidebar.value = false
+      }
+      
       try {
-        const response = await fetch(`/api/messages.php?action=history&contact_id=${contact.id}`, {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${apiUrl}/api/messages.php?action=history&contact_id=${contact.id}`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
         const data = await response.json()
         messages.value = data.messages || []
+        console.log('Messages loaded:', messages.value)
+        console.log('Current user ID:', props.user.id)
+        console.log('Messages with sender_id:', messages.value.map(m => ({ id: m.id, sender_id: m.sender_id, message: m.message })))
+        console.log('Current user ID type:', typeof props.user.id, 'value:', props.user.id)
+        console.log('Message sender_id types:', messages.value.map(m => ({ sender_id: m.sender_id, type: typeof m.sender_id })))
         
         await nextTick()
         scrollToBottom()
@@ -267,44 +302,91 @@ export default {
     }
 
     const sendMessage = async () => {
-      if (!newMessage.value.trim() || !selectedContact.value) return
+      console.log('sendMessage called', { 
+        message: newMessage.value, 
+        selectedContact: selectedContact.value 
+      })
+      
+      if (!newMessage.value.trim() || !selectedContact.value) {
+        console.log('sendMessage blocked:', { 
+          hasMessage: !!newMessage.value.trim(), 
+          hasContact: !!selectedContact.value 
+        })
+        return
+      }
 
       const messageText = newMessage.value
       newMessage.value = ''
 
+      // Crea un messaggio temporaneo con ID temporaneo per mostrarlo immediatamente
+      const tempMessage = {
+        id: 'temp_' + Date.now(),
+        sender_id: props.user.id,
+        receiver_id: selectedContact.value.id,
+        message: messageText,
+        created_at: new Date().toISOString(),
+        is_read: false,
+        sender_username: props.user.username,
+        is_temp: true // Flag per identificare messaggi temporanei
+      }
+      
+      console.log('Creating temp message with sender_id:', props.user.id, 'for user:', props.user)
+
+      // Aggiungi immediatamente il messaggio alla lista
+      messages.value.push(tempMessage)
+      console.log('Message added to list:', tempMessage)
+      console.log('Total messages:', messages.value.length)
+      
+      // Scrolla subito in basso
+      await nextTick()
+      scrollToBottom()
+
+      // Invia il messaggio al server in background
       try {
-        const response = await fetch('/api/messages.php', {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        console.log('Sending message to server:', { apiUrl, messageText, receiverId: selectedContact.value.id })
+        
+        const requestBody = {
+          receiver_id: selectedContact.value.id,
+          message: messageText
+        }
+        
+        console.log('Request body:', requestBody)
+        console.log('Authorization header:', `Bearer ${props.token}`)
+        
+        const response = await fetch(`${apiUrl}/api/messages.php`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${props.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            receiver_id: selectedContact.value.id,
-            message: messageText
-          })
+          body: JSON.stringify(requestBody)
         })
 
         const data = await response.json()
+        console.log('Server response:', data)
 
         if (response.ok) {
-          messages.value.push({
-            ...data.message,
-            sender_username: props.user.username
-          })
+          // Sostituisci il messaggio temporaneo con quello reale dal server
+          const tempIndex = messages.value.findIndex(msg => msg.id === tempMessage.id)
+          if (tempIndex !== -1) {
+            const realMessage = {
+              ...data.message,
+              sender_username: props.user.username
+            }
+            messages.value[tempIndex] = realMessage
+            console.log('Replaced temp message with real message:', realMessage)
+          }
           
-          if (socket.value) {
+          // Invia messaggio via WebSocket se connesso
+          if (socket.value && socket.value.connected) {
             socket.value.emit('send_message', {
               receiver_id: selectedContact.value.id,
               message: messageText,
-              message_id: data.message.id,
-              created_at: data.message.created_at
+              sender_id: props.user.id
             })
           }
 
-          await nextTick()
-          scrollToBottom()
-          
           // Aggiorna le conversazioni per mostrare il nuovo messaggio
           await loadConversations()
           
@@ -313,20 +395,37 @@ export default {
           if (conversation) {
             conversation.unread_count = 0 // Il messaggio è stato inviato, non ricevuto
           }
+        } else {
+          // Se l'invio fallisce, rimuovi il messaggio temporaneo e mostra errore
+          const tempIndex = messages.value.findIndex(msg => msg.id === tempMessage.id)
+          if (tempIndex !== -1) {
+            messages.value.splice(tempIndex, 1)
+          }
+          console.error('Error sending message:', data.error)
+          // Potresti aggiungere qui una notifica di errore all'utente
         }
       } catch (err) {
+        // Se l'invio fallisce, rimuovi il messaggio temporaneo
+        const tempIndex = messages.value.findIndex(msg => msg.id === tempMessage.id)
+        if (tempIndex !== -1) {
+          messages.value.splice(tempIndex, 1)
+        }
         console.error('Error sending message:', err)
+        // Potresti aggiungere qui una notifica di errore all'utente
       }
     }
 
     const handleTyping = () => {
-      if (socket.value && selectedContact.value) {
+      if (socket.value && socket.value.connected && selectedContact.value) {
         socket.value.emit('typing', { receiver_id: selectedContact.value.id })
         
+        // Stop typing dopo 2 secondi di inattività
         clearTimeout(typingTimeout)
         typingTimeout = setTimeout(() => {
-          socket.value.emit('stop_typing', { receiver_id: selectedContact.value.id })
-        }, 1000)
+          if (socket.value && socket.value.connected) {
+            socket.value.emit('stop_typing', { receiver_id: selectedContact.value.id })
+          }
+        }, 2000)
       }
     }
 
@@ -349,7 +448,7 @@ export default {
 
     const updateUserStatus = async (isOnline) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/update_status.php`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/update_status.php`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -371,87 +470,96 @@ export default {
       
       // Aggiorna lo stato dell'utente corrente a online
       await updateUserStatus(true)
-      
-        // Aggiorna lo stato ogni secondo per mantenerlo attivo
-        statusInterval.value = setInterval(() => {
-          updateUserStatus(true)
-        }, 1000)
 
-        // Aggiorna le conversazioni ogni 3 secondi per vedere nuovi messaggi
-        conversationsInterval.value = setInterval(() => {
-          loadConversations()
-        }, 3000)
-
-      socket.value = io(import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3001', {
-        auth: { token: props.token }
-      })
-
-      socket.value.on('connect', () => {
-        console.log('WebSocket connected')
-        // Aggiorna lo stato quando si connette al WebSocket
-        updateUserStatus(true)
-      })
-
-      socket.value.on('receive_message', (data) => {
-        if (selectedContact.value && data.sender_id === selectedContact.value.id) {
-          messages.value.push(data)
-          nextTick(() => scrollToBottom())
-        }
+      // Initialize WebSocket connection
+      try {
+        const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL
+        console.log('Connecting to WebSocket:', websocketUrl)
         
-        // Aggiorna le conversazioni per mostrare il nuovo messaggio
-        loadConversations()
-        
-        // Aggiorna anche il contatore dei messaggi non letti
-        const conversation = conversations.value.find(conv => conv.contact_id === data.sender_id)
-        if (conversation) {
-          conversation.unread_count = (conversation.unread_count || 0) + 1
-        }
-      })
-
-      socket.value.on('user_status', (data) => {
-        if (selectedContact.value && data.user_id === selectedContact.value.id) {
-          selectedContact.value.is_online = data.online
-        }
-        
-        // Aggiorna lo stato nelle conversazioni
-        conversations.value = conversations.value.map(conv => {
-          if (conv.contact_id === data.user_id) {
-            return { ...conv, contact_online: data.online ? 1 : 0 }
-          }
-          return conv
+        socket.value = io(websocketUrl, {
+          auth: { token: props.token },
+          timeout: 5000
         })
-      })
 
-      socket.value.on('user_typing', (data) => {
-        if (selectedContact.value && data.user_id === selectedContact.value.id) {
-          isTyping.value = true
-        }
-      })
+        socket.value.on('connect', () => {
+          console.log('WebSocket connected successfully')
+        })
 
-      socket.value.on('user_stop_typing', (data) => {
-        if (selectedContact.value && data.user_id === selectedContact.value.id) {
-          isTyping.value = false
+        socket.value.on('connect_error', (error) => {
+          console.log('WebSocket connection failed:', error)
+          console.log('Falling back to REST API only')
+        })
+
+        socket.value.on('receive_message', (data) => {
+          console.log('Received message via WebSocket:', data)
+          
+          // Aggiungi il messaggio solo se è per la conversazione corrente
+          if (selectedContact.value && 
+              (data.sender_id == selectedContact.value.id || data.receiver_id == selectedContact.value.id)) {
+            
+            // Evita duplicati
+            const messageExists = messages.value.some(msg => msg.id === data.id)
+            if (!messageExists) {
+              messages.value.push({
+                ...data,
+                sender_username: data.sender_id == props.user.id ? props.user.username : selectedContact.value.username
+              })
+              
+              nextTick(() => {
+                scrollToBottom()
+              })
+            }
+          }
+          
+          // Aggiorna le conversazioni
+          loadConversations()
+        })
+
+        socket.value.on('typing', (data) => {
+          if (selectedContact.value && data.sender_id == selectedContact.value.id) {
+            isTyping.value = true
+            clearTimeout(typingTimeout)
+            typingTimeout = setTimeout(() => {
+              isTyping.value = false
+            }, 3000)
+          }
+        })
+
+        socket.value.on('stop_typing', (data) => {
+          if (selectedContact.value && data.sender_id == selectedContact.value.id) {
+            isTyping.value = false
+            clearTimeout(typingTimeout)
+          }
+        })
+
+      } catch (error) {
+        console.log('WebSocket not available, using REST API only:', error)
+      }
+
+      // Initialize sidebar state based on screen size
+      handleResize = () => {
+        if (window.innerWidth >= 768) {
+          showSidebar.value = true
         }
-      })
+      }
+      
+      window.addEventListener('resize', handleResize)
+      handleResize() // Initial check
     })
 
     onUnmounted(() => {
-      // Aggiorna lo stato dell'utente a offline quando si disconnette
-      updateUserStatus(false)
-      
-      // Pulisce l'intervallo di aggiornamento dello stato
-      if (statusInterval.value) {
-        clearInterval(statusInterval.value)
+      // Cleanup resize listener
+      if (handleResize) {
+        window.removeEventListener('resize', handleResize)
       }
       
-      // Pulisce l'intervallo di aggiornamento delle conversazioni
-      if (conversationsInterval.value) {
-        clearInterval(conversationsInterval.value)
-      }
-      
+      // Disconnect WebSocket
       if (socket.value) {
         socket.value.disconnect()
       }
+      
+      // Aggiorna lo stato dell'utente a offline quando si disconnette
+      updateUserStatus(false)
     })
 
     watch(selectedContact, () => {
@@ -467,6 +575,10 @@ export default {
       searchResults,
       messagesContainer,
       isTyping,
+      user,
+      showSidebar,
+      toggleSidebar,
+      socket,
       searchUsers,
       selectContact,
       sendMessage,
