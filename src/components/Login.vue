@@ -107,7 +107,7 @@ export default {
           ? { username: username.value, email: email.value, password: password.value }
           : { username: email.value, password: password.value }
 
-        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
         const response = await fetch(`${apiUrl}/api/auth.php`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

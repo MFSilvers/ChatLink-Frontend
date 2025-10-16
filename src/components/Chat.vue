@@ -232,7 +232,7 @@ export default {
 
     const loadConversations = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')?.replace(/\/$/, '')
         const response = await fetch(`${apiUrl}/api/messages.php?action=conversations`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
@@ -250,7 +250,7 @@ export default {
       }
 
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
         const response = await fetch(`${apiUrl}/api/users.php?search=${searchQuery.value}`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
@@ -273,7 +273,7 @@ export default {
       }
       
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
         const response = await fetch(`${apiUrl}/api/messages.php?action=history&contact_id=${contact.id}`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
@@ -343,7 +343,7 @@ export default {
 
       // Invia il messaggio al server in background
       try {
-        const apiUrl = import.meta.env.VITE_API_BASE_URL
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
         console.log('Sending message to server:', { apiUrl, messageText, receiverId: selectedContact.value.id })
         
         const requestBody = {
@@ -448,7 +448,7 @@ export default {
 
     const updateUserStatus = async (isOnline) => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/update_status.php`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')}/api/update_status.php`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
