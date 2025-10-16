@@ -167,7 +167,7 @@
           </div>
         </div>
         
-        <div class="p-4 bg-white border-t border-gray-200 message-input-area" :class="{ 'hidden': !selectedContact }">
+        <div class="p-4 bg-white border-t border-gray-200 message-input-area">
           <form @submit.prevent="sendMessage" class="flex space-x-3">
             <input 
               v-model="newMessage"
@@ -258,7 +258,6 @@ export default {
     }
 
     const selectContact = async (contact) => {
-      console.log('selectContact called with:', contact)
       selectedContact.value = contact
       searchQuery.value = ''
       searchResults.value = []
@@ -275,11 +274,6 @@ export default {
         })
         const data = await response.json()
         messages.value = data.messages || []
-        console.log('Messages loaded:', messages.value)
-        console.log('Current user ID:', props.user.id)
-        console.log('Messages with sender_id:', messages.value.map(m => ({ id: m.id, sender_id: m.sender_id, message: m.message })))
-        console.log('Current user ID type:', typeof props.user.id, 'value:', props.user.id)
-        console.log('Message sender_id types:', messages.value.map(m => ({ sender_id: m.sender_id, type: typeof m.sender_id })))
         
         await nextTick()
         scrollToBottom()
@@ -298,16 +292,8 @@ export default {
     }
 
     const sendMessage = async () => {
-      console.log('sendMessage called', { 
-        message: newMessage.value, 
-        selectedContact: selectedContact.value 
-      })
       
       if (!newMessage.value.trim() || !selectedContact.value) {
-        console.log('sendMessage blocked:', { 
-          hasMessage: !!newMessage.value.trim(), 
-          hasContact: !!selectedContact.value 
-        })
         return
       }
 
@@ -326,12 +312,9 @@ export default {
         is_temp: true // Flag per identificare messaggi temporanei
       }
       
-      console.log('Creating temp message with sender_id:', props.user.id, 'for user:', props.user)
 
       // Aggiungi immediatamente il messaggio alla lista
       messages.value.push(tempMessage)
-      console.log('Message added to list:', tempMessage)
-      console.log('Total messages:', messages.value.length)
       
       // Scrolla subito in basso
       await nextTick()
@@ -340,15 +323,12 @@ export default {
       // Invia il messaggio al server in background
       try {
         const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '')
-        console.log('Sending message to server:', { apiUrl, messageText, receiverId: selectedContact.value.id })
         
         const requestBody = {
           receiver_id: selectedContact.value.id,
           message: messageText
         }
         
-        console.log('Request body:', requestBody)
-        console.log('Authorization header:', `Bearer ${props.token}`)
         
         const response = await fetch(`${apiUrl}/api/messages.php`, {
           method: 'POST',
@@ -360,7 +340,6 @@ export default {
         })
 
         const data = await response.json()
-        console.log('Server response:', data)
 
         if (response.ok) {
           // Sostituisci il messaggio temporaneo con quello reale dal server
@@ -371,7 +350,6 @@ export default {
               sender_username: props.user.username
             }
             messages.value[tempIndex] = realMessage
-            console.log('Replaced temp message with real message:', realMessage)
           }
           
           // Invia messaggio via WebSocket se connesso
@@ -454,7 +432,6 @@ export default {
         })
         
         if (response.ok) {
-          console.log(`User status updated to ${isOnline ? 'online' : 'offline'}`)
         }
       } catch (error) {
         console.error('Error updating user status:', error)
@@ -470,7 +447,6 @@ export default {
       // Initialize WebSocket connection
       try {
         const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL
-        console.log('Connecting to WebSocket:', websocketUrl)
         
         socket.value = io(websocketUrl, {
           auth: { token: props.token },
@@ -478,16 +454,12 @@ export default {
         })
 
         socket.value.on('connect', () => {
-          console.log('WebSocket connected successfully')
         })
 
         socket.value.on('connect_error', (error) => {
-          console.log('WebSocket connection failed:', error)
-          console.log('Falling back to REST API only')
         })
 
         socket.value.on('receive_message', (data) => {
-          console.log('Received message via WebSocket:', data)
           
           // Aggiungi il messaggio solo se è per la conversazione corrente
           if (selectedContact.value && 
@@ -529,7 +501,6 @@ export default {
         })
 
       } catch (error) {
-        console.log('WebSocket not available, using REST API only:', error)
       }
 
       // Initialize sidebar state based on screen size

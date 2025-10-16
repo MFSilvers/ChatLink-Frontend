@@ -31,17 +31,13 @@ export default {
           const tokenPayload = JSON.parse(atob(savedToken.split('.')[1]))
           const savedUserData = JSON.parse(savedUser)
           
-          console.log('Token user_id:', tokenPayload.user_id)
-          console.log('Saved user_id:', savedUserData.id)
           
           if (tokenPayload.user_id.toString() !== savedUserData.id.toString()) {
-            console.log('User ID mismatch - clearing localStorage')
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             return
           }
         } catch (error) {
-          console.log('Error parsing token - clearing localStorage')
           localStorage.removeItem('token')
           localStorage.removeItem('user')
           return
