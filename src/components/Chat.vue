@@ -72,7 +72,7 @@
           :key="conv.contact_id"
           @click="selectContact({ id: conv.contact_id, username: conv.contact_username, is_online: conv.contact_online })"
           :class="['p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 flex items-center transition-all duration-200', 
-                   selectedContact?.id === conv.contact_id ? 'bg-blue-50 border-blue-200' : '']"
+                   selectedContact?.id == conv.contact_id ? 'bg-blue-50 border-blue-200' : '']"
         >
           <div class="avatar avatar-purple mr-3">
             {{ conv.contact_username[0].toUpperCase() }}
@@ -145,10 +145,10 @@
         </div>
         
         <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 space-y-4 messages-container">
-          <div v-for="msg in messages" :key="msg.id" :class="['flex animate-fade-in', msg.sender_id === user.id ? 'justify-end' : 'justify-start']">
-            <div :class="['message-bubble', msg.sender_id === user.id ? 'message-sent' : 'message-received', msg.is_temp ? 'message-temp' : '']">
+          <div v-for="msg in messages" :key="msg.id" :class="['flex animate-fade-in', msg.sender_id == user.id ? 'justify-end' : 'justify-start']">
+            <div :class="['message-bubble', msg.sender_id == user.id ? 'message-sent' : 'message-received', msg.is_temp ? 'message-temp' : '']">
               <div class="text-sm">{{ msg.message }}</div>
-              <div :class="['text-xs mt-1', msg.sender_id === user.id ? 'text-blue-100' : 'text-gray-500']">
+              <div :class="['text-xs mt-1', msg.sender_id == user.id ? 'text-blue-100' : 'text-gray-500']">
                 <span>{{ formatTime(msg.created_at) }}</span>
               </div>
             </div>
@@ -282,7 +282,7 @@ export default {
         await loadConversations()
         
         // Azzera il contatore dei messaggi non letti per questo contatto
-        const conversation = conversations.value.find(conv => conv.contact_id === contact.id)
+        const conversation = conversations.value.find(conv => conv.contact_id == contact.id)
         if (conversation) {
           conversation.unread_count = 0
         }
@@ -365,7 +365,7 @@ export default {
           await loadConversations()
           
           // Aggiorna anche il contatore dei messaggi non letti per il destinatario
-          const conversation = conversations.value.find(conv => conv.contact_id === selectedContact.value.id)
+          const conversation = conversations.value.find(conv => conv.contact_id == selectedContact.value.id)
           if (conversation) {
             conversation.unread_count = 0 // Il messaggio è stato inviato, non ricevuto
           }
