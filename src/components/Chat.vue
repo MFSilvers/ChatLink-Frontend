@@ -3,7 +3,7 @@
     <!-- Sidebar - Responsive -->
     <div class="w-full md:w-1/3 lg:w-1/4 sidebar flex flex-col" :class="{ 'hidden': !showSidebar, 'block': showSidebar }">
       <div class="card-header flex justify-between items-center">
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors duration-200" @click="openUserProfile">
           <div class="avatar avatar-blue">
             {{ user.username[0].toUpperCase() }}
           </div>
@@ -189,15 +189,26 @@
         </div>
       </template>
     </div>
+
+    <!-- User Profile Modal -->
+    <UserProfile 
+      :isOpen="showUserProfile" 
+      :user="user" 
+      @close="closeUserProfile" 
+    />
   </div>
 </template>
 
 <script>
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { io } from 'socket.io-client'
+import UserProfile from './UserProfile.vue'
 
 export default {
   name: 'Chat',
+  components: {
+    UserProfile
+  },
   props: ['user', 'token'],
   emits: ['logout'],
   setup(props) {
@@ -214,6 +225,9 @@ export default {
     // Mobile sidebar state
     const showSidebar = ref(true)
     let handleResize = null
+    
+    // User profile state
+    const showUserProfile = ref(false)
     
     // WebSocket connection
     const socket = ref(null)
@@ -533,6 +547,15 @@ export default {
       isTyping.value = false
     })
 
+    // User profile methods
+    const openUserProfile = () => {
+      showUserProfile.value = true
+    }
+
+    const closeUserProfile = () => {
+      showUserProfile.value = false
+    }
+
     return {
       conversations,
       selectedContact,
@@ -550,7 +573,10 @@ export default {
       selectContact,
       sendMessage,
       handleTyping,
-      formatTime
+      formatTime,
+      showUserProfile,
+      openUserProfile,
+      closeUserProfile
     }
   }
 }
