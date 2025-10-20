@@ -194,7 +194,8 @@
     <UserProfile 
       :isOpen="showUserProfile" 
       :user="user" 
-      @close="closeUserProfile" 
+      @close="closeUserProfile"
+      @updateUser="updateUser"
     />
   </div>
 </template>
@@ -556,6 +557,11 @@ export default {
       showUserProfile.value = false
     }
 
+    const updateUser = (updatedUser) => {
+      // Aggiorna l'oggetto user con i nuovi dati
+      Object.assign(user.value, updatedUser)
+    }
+
     return {
       conversations,
       selectedContact,
@@ -576,7 +582,8 @@ export default {
       formatTime,
       showUserProfile,
       openUserProfile,
-      closeUserProfile
+      closeUserProfile,
+      updateUser
     }
   }
 }
