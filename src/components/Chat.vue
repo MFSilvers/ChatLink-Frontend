@@ -233,8 +233,7 @@ export default {
     // WebSocket connection
     const socket = ref(null)
     
-    // Refresh interval for conversations (especially important on mobile)
-    let conversationsRefreshInterval = null
+    // Visibility change handler for mobile
     let handleVisibilityChange = null
 
     // Definisci user come variabile reattiva per il template
@@ -479,12 +478,6 @@ export default {
       // Aggiorna lo stato dell'utente corrente a online
       await updateUserStatus(true)
       
-      // Refresh periodico delle conversazioni ogni 5 secondi (importante su mobile)
-      // Questo assicura che i nuovi messaggi vengano sempre visualizzati
-      conversationsRefreshInterval = setInterval(() => {
-        loadConversations().catch(console.error)
-      }, 5000)
-      
       // Aggiorna i messaggi quando la pagina torna in focus (importante su mobile)
       handleVisibilityChange = () => {
         if (!document.hidden && selectedContact.value) {
@@ -588,12 +581,6 @@ export default {
       // Cleanup resize listener
       if (handleResize) {
         window.removeEventListener('resize', handleResize)
-      }
-      
-      // Cleanup conversations refresh interval
-      if (conversationsRefreshInterval) {
-        clearInterval(conversationsRefreshInterval)
-        conversationsRefreshInterval = null
       }
       
       // Cleanup visibility change listener
