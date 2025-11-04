@@ -188,7 +188,8 @@ export default {
       this.usernameError = '';
       
       try {
-        const response = await fetch('/api/users.php', {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
+        const response = await fetch(`${apiUrl}/api/users.php`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -200,12 +201,17 @@ export default {
         });
         
         if (response.ok) {
-          const updatedUser = { ...this.user, username: this.editingUsername.trim() };
+          const data = await response.json().catch(() => ({}));
+          const updatedUser = { ...this.user, username: data.username || this.editingUsername.trim() };
           this.$emit('updateUser', updatedUser);
           this.cancelEdit();
         } else {
-          const error = await response.json();
-          this.usernameError = error.message || 'Errore durante il salvataggio';
+          try {
+            const error = await response.json();
+            this.usernameError = error.error || error.message || `Errore ${response.status}: ${response.statusText}`;
+          } catch (e) {
+            this.usernameError = `Errore ${response.status}: ${response.statusText}`;
+          }
         }
       } catch (error) {
         console.error('Errore:', error);
