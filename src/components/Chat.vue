@@ -232,6 +232,10 @@ export default {
     
     // WebSocket connection
     const socket = ref(null)
+    
+    // Refresh interval for conversations (especially important on mobile)
+    let conversationsRefreshInterval = null
+    let handleVisibilityChange = null
 
     // Definisci user come variabile reattiva per il template
     const user = computed(() => props.user)
@@ -277,6 +281,9 @@ export default {
       searchQuery.value = ''
       searchResults.value = []
       
+      // Pulisci i messaggi prima di caricare quelli nuovi (evita problemi di visualizzazione)
+      messages.value = []
+      
       // Hide sidebar on mobile when contact is selected
       if (window.innerWidth < 768) {
         showSidebar.value = false
@@ -287,9 +294,16 @@ export default {
         const response = await fetch(`${apiUrl}/api/messages.php?action=history&contact_id=${contact.id}`, {
           headers: { 'Authorization': `Bearer ${props.token}` }
         })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
         const data = await response.json()
         messages.value = data.messages || []
         
+        // Forza un doppio nextTick per assicurarsi che il DOM sia aggiornato
+        await nextTick()
         await nextTick()
         scrollToBottom()
         
@@ -365,6 +379,10 @@ export default {
               sender_username: props.user.username
             }
             messages.value[tempIndex] = realMessage
+            
+            // Forza un aggiornamento visivo e scroll
+            await nextTick()
+            scrollToBottom()
           }
           
           // Invia messaggio via WebSocket se connesso
@@ -372,6 +390,8 @@ export default {
             socket.value.emit('send_message', {
               receiver_id: selectedContact.value.id,
               message: messageText,
+              message_id: data.message.id,
+              created_at: data.message.created_at,
               sender_id: props.user.id
             })
           }
@@ -458,6 +478,22 @@ export default {
       
       // Aggiorna lo stato dell'utente corrente a online
       await updateUserStatus(true)
+      
+      // Refresh periodico delle conversazioni ogni 5 secondi (importante su mobile)
+      // Questo assicura che i nuovi messaggi vengano sempre visualizzati
+      conversationsRefreshInterval = setInterval(() => {
+        loadConversations().catch(console.error)
+      }, 5000)
+      
+      // Aggiorna i messaggi quando la pagina torna in focus (importante su mobile)
+      handleVisibilityChange = () => {
+        if (!document.hidden && selectedContact.value) {
+          // Ricarica i messaggi quando la pagina torna visibile
+          selectContact(selectedContact.value).catch(console.error)
+        }
+      }
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange)
 
       // Initialize WebSocket connection
       try {
@@ -474,28 +510,47 @@ export default {
         socket.value.on('connect_error', (error) => {
         })
 
-        socket.value.on('receive_message', (data) => {
+        socket.value.on('receive_message', async (data) => {
+          // Ignora i messaggi inviati dall'utente stesso (sono già gestiti in sendMessage)
+          if (data.sender_id == props.user.id) {
+            return
+          }
           
           // Aggiungi il messaggio solo se è per la conversazione corrente
           if (selectedContact.value && 
               (data.sender_id == selectedContact.value.id || data.receiver_id == selectedContact.value.id)) {
             
-            // Evita duplicati
-            const messageExists = messages.value.some(msg => msg.id === data.id)
+            // Evita duplicati - controlla sia per ID che per contenuto e timestamp
+            const messageExists = messages.value.some(msg => 
+              msg.id === data.id || 
+              (msg.message === data.message && 
+               msg.sender_id === data.sender_id && 
+               msg.receiver_id === data.receiver_id &&
+               Math.abs(new Date(msg.created_at) - new Date(data.created_at)) < 1000)
+            )
+            
             if (!messageExists) {
               messages.value.push({
                 ...data,
                 sender_username: data.sender_id == props.user.id ? props.user.username : selectedContact.value.username
               })
               
-              nextTick(() => {
-                scrollToBottom()
-              })
+              await nextTick()
+              scrollToBottom()
             }
           }
           
-          // Aggiorna le conversazioni
-          loadConversations()
+          // Aggiorna sempre le conversazioni quando arriva un nuovo messaggio
+          // Questo è importante per aggiornare il contatore dei messaggi non letti
+          try {
+            await loadConversations()
+          } catch (err) {
+            console.error('Error updating conversations after new message:', err)
+            // Riprova dopo un breve delay se fallisce
+            setTimeout(() => {
+              loadConversations().catch(console.error)
+            }, 500)
+          }
         })
 
         socket.value.on('typing', (data) => {
@@ -533,6 +588,18 @@ export default {
       // Cleanup resize listener
       if (handleResize) {
         window.removeEventListener('resize', handleResize)
+      }
+      
+      // Cleanup conversations refresh interval
+      if (conversationsRefreshInterval) {
+        clearInterval(conversationsRefreshInterval)
+        conversationsRefreshInterval = null
+      }
+      
+      // Cleanup visibility change listener
+      if (handleVisibilityChange) {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+        handleVisibilityChange = null
       }
       
       // Disconnect WebSocket
